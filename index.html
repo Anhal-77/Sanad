@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>Hajj Call-Sync | ملاحة للحجاج الصم</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Hajj%20Call-Sync%22%2C%22short_name%22%3A%22HajjSync%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23667eea%22%2C%22theme_color%22%3A%22%23667eea%22%7D">
+    
+    <!-- Firebase SDK 11 Compat (يشتغل مباشرة) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+    <script>
+        // تهيئة Firebase فوراً
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnJiGM6tuhw8_J57yZNt4PyWSgEQJbxK8",
+            authDomain: "sanad-df4a3.firebaseapp.com",
+            databaseURL: "https://sanad-df4a3-default-rtdb.firebaseio.com",
+            projectId: "sanad-df4a3",
+            storageBucket: "sanad-df4a3.firebasestorage.app",
+            messagingSenderId: "624473950976",
+            appId: "1:624473950976:web:131d59fcde558cb5dc41e5",
+            measurementId: "G-GYNKY90CG5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        window._db = firebase.database();
+        console.log("✅ Firebase جاهز!");
+    </script>
+    
+    <!-- QR Code Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow: 0 10px 40px rgba(0,0,0,0.2);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* خلفية متحركة */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            z-index: -1;
+        }
+
+        .animated-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+        }
+
+        @keyframes moveBackground {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* الهيدر */
+        .header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 5em;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            font-weight: 900;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: linear-gradient(90deg, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 600;
+        }
+
+        /* البطاقات */
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            color: #333;
+            border-radius: 25px;
+            padding: 35px;
+            margin: 25px 0;
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--bg-gradient);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card h2 {
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: 900;
+        }
+
+        /* أزرار الاختيار */
+        .role-buttons {
+            display: grid;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .role-btn {
+            padding: 28px 22px;
+            border: 3px solid #e5e7eb;
+            border-radius: 18px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            transition: left 0.4s ease;
+            z-index: 0;
+        }
+
+        .role-btn > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .role-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-btn.active {
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .role-btn.active::before {
+            left: 0;
+        }
+
+        .role-btn .icon {
+            font-size: 3.5em;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .role-btn .title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .role-btn .desc {
+            font-size: 1em;
+            opacity: 0.85;
+        }
+
+        /* قسم الباركود المحسّن */
+        .qr-section {
+            display: none;
+            text-align: center;
+            padding: 25px 0;
+        }
+
+        .qr-section.active {
+            display: block;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .qr-container {
+            position: relative;
+            display: inline-block;
+            margin: 25px 0;
+        }
+
+        #qrcode {
+            padding: 25px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.25);
+            display: inline-block;
+            position: relative;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.25);
+            }
+            50% {
+                box-shadow: 0 15px 50px rgba(102, 126, 234, 0.4);
+            }
+        }
+
+        .qr-corners {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            pointer-events: none;
+        }
+
+        .qr-corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 5px solid var(--primary);
+            animation: cornerPulse 1.5s ease-in-out infinite;
+        }
+
+        .qr-corner.tl {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 15px 0 0 0;
+        }
+
+        .qr-corner.tr {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+            border-radius: 0 15px 0 0;
+        }
+
+        .qr-corner.bl {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 15px;
+        }
+
+        .qr-corner.br {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+            border-radius: 0 0 15px 0;
+        }
+
+        @keyframes cornerPulse {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        .session-code {
+            font-size: 2.2em;
+            font-weight: 900;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 6px;
+            margin: 20px 0;
+            padding: 18px;
+            background-color: #f3f4f6;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        /* قسم المسح المحسّن */
+        .scan-section {
+            display: none;
+            text-align: center;
+        }
+
+        .scan-section.active {
+            display: block;
+            animation: scaleIn 0.5s ease;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            margin: 25px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+
+        #video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            border: 4px solid var(--success);
+            border-radius: 15px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+            animation: scanLine 2s linear infinite;
+        }
+
+        @keyframes scanLine {
+            0%, 100% {
+                border-color: var(--success);
+                box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 20px var(--success);
+            }
+            50% {
+                border-color: #34d399;
+                box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 40px #34d399;
+            }
+        }
+
+        .scan-corners-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 230px;
+            height: 230px;
+            pointer-events: none;
+        }
+
+        .scan-corner {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border: 5px solid var(--success);
+        }
+
+        .scan-corner.tl {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .scan-corner.tr {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .scan-corner.bl {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+        }
+
+        .scan-corner.br {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.5em;
+            text-align: center;
+            border: 3px solid #e5e7eb;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 700;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        /* الأزرار المحسّنة */
+        .btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-gradient);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* شاشة التطبيق */
+        .app-screen {
+            display: none;
+        }
+
+        .app-screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-bar {
+            background: rgba(0,0,0,0.85);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* منطقة العرض */
+        .viewer {
+            height: 450px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .compass-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.05) 45%, transparent 45%),
+                repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(0,0,0,0.03) 35px, rgba(0,0,0,0.03) 36px);
+        }
+
+        .arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 8px 16px rgba(0,255,0,0.4));
+        }
+
+        .arrow svg {
+            width: 140px;
+            height: 140px;
+        }
+
+        /* مؤشر الاتجاه */
+        .direction {
+            text-align: center;
+            padding: 25px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 18px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .direction-icon {
+            font-size: 4em;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .direction-text {
+            font-size: 2.2em;
+            font-weight: 900;
+        }
+
+        /* المعلومات */
+        .info-bar {
+            background: rgba(0,0,0,0.85);
+            padding: 25px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.95em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 2em;
+            font-weight: 900;
+            color: var(--success);
+            text-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+        }
+
+        /* زر الاتصال */
+        .call-btn {
+            width: 100%;
+            padding: 25px;
+            font-size: 1.5em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(245, 87, 108, 0.4);
+            transition: all 0.3s;
+            animation: callPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes callPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 10px 40px rgba(245, 87, 108, 0.4);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 15px 50px rgba(245, 87, 108, 0.6);
+            }
+        }
+
+        .call-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* التحكم */
+        .controls {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls h3 {
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--success);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .value-display {
+            background: rgba(0,0,0,0.4);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* التنبيهات */
+        .alert {
+            padding: 18px;
+            border-radius: 12px;
+            margin: 18px 0;
+            text-align: center;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .alert-info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .alert-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* GPS Status */
+        .gps-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .gps-icon {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2.2em;
+            }
+
+            .logo {
+                font-size: 4em;
+            }
+
+            .session-code {
+                font-size: 1.8em;
+                letter-spacing: 4px;
+            }
+
+            .viewer {
+                height: 350px;
+            }
+
+            .direction-icon {
+                font-size: 3em;
+            }
+
+            .direction-text {
+                font-size: 1.8em;
+            }
+
+            .info-value {
+                font-size: 1.6em;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        /* تأثير النبض للكود */
+        .code-highlight {
+            animation: highlight 1s ease-in-out 3;
+        }
+
+        @keyframes highlight {
+            0%, 100% {
+                background-color: #f3f4f6;
+            }
+            50% {
+                background-color: #dbeafe;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+    
+    <div class="container">
+        <!-- الهيدر -->
+        <div class="header">
+            <div class="logo">🕋</div>
+            <h1>Hajj Call-Sync</h1>
+            <p class="subtitle">ملاحة ذكية للحجاج الصم</p>
+        </div>
+
+        <!-- بطاقة الاختيار -->
+        <div class="card" id="choiceCard">
+            <h2>اختر دورك</h2>
+
+            <div class="role-buttons">
+                <div class="role-btn" onclick="selectRole('deaf')">
+                    <div class="icon">🧑</div>
+                    <div class="title">أنا الحاج الأصم</div>
+                    <div class="desc">سأعرض باركود QR لرفيقي</div>
+                </div>
+
+                <div class="role-btn" onclick="selectRole('companion')">
+                    <div class="icon">👥</div>
+                    <div class="title">أنا الرفيق</div>
+                    <div class="desc">سأمسح باركود الحاج</div>
+                </div>
+            </div>
+
+            <!-- قسم الباركود (للحاج الأصم) -->
+            <div class="qr-section" id="deafQR">
+                <h3 style="font-size: 1.4em; margin-bottom: 15px;">📱 باركود الربط</h3>
+                <p style="opacity: 0.8; margin-bottom: 20px;">اطلب من رفيقك مسح هذا الباركود</p>
+                
+                <div class="qr-container">
+                    <div id="qrcode"></div>
+                    <div class="qr-corners">
+                        <div class="qr-corner tl"></div>
+                        <div class="qr-corner tr"></div>
+                        <div class="qr-corner bl"></div>
+                        <div class="qr-corner br"></div>
+                    </div>
+                </div>
+                
+                <div class="session-code" id="generatedCode">SAND-0000</div>
+                
+                <div class="alert alert-info">
+                    💡 أو شارك الكود يدوياً مع رفيقك
+                </div>
+
+                <button class="btn btn-primary" onclick="startDeafMode()">
+                    ✅ بدء الملاحة
+                </button>
+            </div>
+
+            <!-- قسم المسح (للرفيق) -->
+            <div class="scan-section" id="companionScan">
+                <h3 style="font-size: 1.4em; margin-bottom: 15px;">📸 مسح الباركود</h3>
+                
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <div class="scan-overlay"></div>
+                    <div class="scan-corners-overlay">
+                        <div class="scan-corner tl"></div>
+                        <div class="scan-corner tr"></div>
+                        <div class="scan-corner bl"></div>
+                        <div class="scan-corner br"></div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" id="scanStatus">
+                    🎯 وجّه الكاميرا نحو باركود الحاج
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <p style="font-weight: 700; margin-bottom: 12px;">أو أدخل الكود يدوياً:</p>
+                    <input type="text" class="code-input" id="codeInput" 
+                           placeholder="SAND-1234" maxlength="9">
+                    <button class="btn btn-secondary" onclick="submitCode()">
+                        🔗 ربط مع الحاج
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة التطبيق -->
+        <div class="app-screen" id="appScreen">
+            <!-- شريط الحالة -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span id="connectionStatus">متصل</span>
+                </div>
+                <div class="status-item" style="font-size:0.85em;">
+                    <span id="firebaseStatus" style="color:#f59e0b;">⏳ Firebase...</span>
+                </div>
+                <div class="status-item">
+                    <span style="font-family: 'Courier New'; font-weight: 900;" id="displayCode">SAND-0000</span>
+                </div>
+            </div>
+
+            <!-- GPS Status -->
+            <div class="gps-status" id="gpsStatus">
+                <span class="gps-icon">📡</span>
+                <span>جاري تحديد الموقع...</span>
+            </div>
+
+            <!-- منطقة العرض -->
+            <div class="viewer">
+                <div class="compass-bg"></div>
+                <div class="arrow" id="arrow">
+                    <svg viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00ff00;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#00cc00;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        <polygon points="50,15 65,45 35,45" fill="url(#arrowGradient)" filter="url(#glow)"/>
+                        <rect x="45" y="45" width="10" height="45" fill="url(#arrowGradient)" filter="url(#glow)" rx="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- مؤشر الاتجاه -->
+            <div class="direction">
+                <div class="direction-icon" id="directionIcon">⬆️</div>
+                <div class="direction-text" id="directionText">مستقيم</div>
+            </div>
+
+            <!-- المعلومات -->
+            <div class="info-bar">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">المسافة</div>
+                        <div class="info-value"><span id="distance">---</span> م</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">الاتجاه</div>
+                        <div class="info-value"><span id="bearing">0</span>°</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- زر الاتصال (للرفيق فقط) -->
+            <button class="call-btn" id="callBtn" style="display: none;" onclick="sendCallSignal()">
+                📞 اتصل بالحاج الأصم
+            </button>
+
+            <!-- التحكم (للتجربة) -->
+            <div class="controls">
+                <h3>🎮 وضع التجربة</h3>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>اتجاه الرفيق</span>
+                        <span class="value-display" id="bearingValue">0°</span>
+                    </label>
+                    <input type="range" id="bearingSlider" min="0" max="360" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>المسافة</span>
+                        <span class="value-display" id="distanceValue">250 م</span>
+                    </label>
+                    <input type="range" id="distanceSlider" min="10" max="1000" value="250">
+                </div>
+
+                <button class="btn btn-danger" onclick="exitApp()">
+                    🚪 إنهاء الجلسة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // المتغيرات العامة
+        let selectedRole = null;
+        let sessionCode = null;
+        let userHeading = 0;
+        let html5QrCode = null;
+        let myLocation = null;
+        let partnerLocation = null;
+        let watchId = null;
+        // Firebase جاهز مباشرة (compat mode)
+        let firebaseReady = !!window._db;
+
+        // تحقق بعد تحميل الصفحة
+        window.addEventListener('load', () => {
+            firebaseReady = !!window._db;
+            const el = document.getElementById('firebaseStatus');
+            if (firebaseReady && el) {
+                el.textContent = '🔥 Firebase متصل';
+                el.style.color = '#10b981';
+            }
+        });
+
+        // Helper: مرجع Firebase
+        function dbRef(path) {
+            return window._db.ref(path);
+        }
+
+        // اختيار الدور
+        function selectRole(role) {
+            selectedRole = role;
+            
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            event.target.closest('.role-btn').classList.add('active');
+            
+            document.querySelectorAll('.qr-section, .scan-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            if (role === 'deaf') {
+                setupDeafMode();
+            } else {
+                setupCompanionMode();
+            }
+        }
+
+        // إعداد وضع الحاج الأصم
+        function setupDeafMode() {
+            const randomNum = Math.floor(Math.random() * 9000) + 1000;
+            sessionCode = `SAND-${randomNum}`;
+            document.getElementById('generatedCode').textContent = sessionCode;
+            document.getElementById('generatedCode').classList.add('code-highlight');
+            
+            // إنشاء QR Code محسّن
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: sessionCode,
+                width: 220,
+                height: 220,
+                colorDark: '#667eea',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            document.getElementById('deafQR').classList.add('active');
+            
+            // حفظ الجلسة
+            localStorage.setItem('lastSession', sessionCode);
+            localStorage.setItem('lastRole', 'deaf');
+        }
+
+        // إعداد وضع الرفيق
+        function setupCompanionMode() {
+            document.getElementById('companionScan').classList.add('active');
+            startQRScanner();
+        }
+
+        // تشغيل ماسح QR
+        function startQRScanner() {
+            const config = {
+                fps: 10,
+                qrbox: { width: 220, height: 220 },
+                aspectRatio: 1.0
+            };
+            
+            html5QrCode = new Html5Qrcode("video");
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanError
+            ).catch(err => {
+                console.error("Camera error:", err);
+                document.getElementById('scanStatus').className = 'alert alert-warning';
+                document.getElementById('scanStatus').innerHTML = 
+                    '⚠️ لا يمكن الوصول للكاميرا<br>استخدم الإدخال اليدوي أدناه';
+            });
+        }
+
+        // عند نجاح المسح
+        function onScanSuccess(decodedText) {
+            if (decodedText.startsWith('SAND-')) {
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        sessionCode = decodedText;
+                        document.getElementById('scanStatus').className = 'alert alert-success';
+                        document.getElementById('scanStatus').innerHTML = 
+                            `✅ تم المسح بنجاح!<br><strong style="font-size: 1.3em;">${sessionCode}</strong>`;
+                        
+                        // اهتزاز + صوت
+                        if (navigator.vibrate) {
+                            navigator.vibrate([200, 100, 200, 100, 200]);
+                        }
+                        
+                        // صوت تنبيه
+                        playSuccessSound();
+                        
+                        setTimeout(() => {
+                            startCompanionMode();
+                        }, 2000);
+                    }).catch(err => {
+                        console.error("Stop error:", err);
+                    });
+                }
+            }
+        }
+
+        function onScanError(errorMessage) {
+            // تجاهل الأخطاء العادية
+        }
+
+        // الإدخال اليدوي
+        function submitCode() {
+            const code = document.getElementById('codeInput').value.toUpperCase().trim();
+            
+            if (!code || !code.match(/^SAND-\d{4}$/)) {
+                alert('⚠️ الرجاء إدخال كود صحيح بصيغة: SAND-1234');
+                return;
+            }
+            
+            sessionCode = code;
+            
+            if (html5QrCode) {
+                html5QrCode.stop().catch(err => console.log(err));
+            }
+            
+            startCompanionMode();
+        }
+
+        // بدء وضع الحاج الأصم
+        function startDeafMode() {
+            showAppScreen();
+            startGPS();
+            startFirebaseListener();
+        }
+
+        // بدء وضع الرفيق
+        function startCompanionMode() {
+            showAppScreen();
+            document.getElementById('callBtn').style.display = 'block';
+            startGPS();
+            startFirebaseListener();
+        }
+
+        // عرض شاشة التطبيق
+        function showAppScreen() {
+            document.getElementById('displayCode').textContent = sessionCode;
+            document.getElementById('choiceCard').style.display = 'none';
+            document.getElementById('appScreen').classList.add('active');
+            
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+        }
+
+        // بدء GPS
+        function startGPS() {
+            if (!navigator.geolocation) {
+                alert('⚠️ جهازك لا يدعم GPS');
+                return;
+            }
+
+            document.getElementById('gpsStatus').innerHTML = 
+                '<span class="gps-icon">📡</span><span>جاري تحديد الموقع...</span>';
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            watchId = navigator.geolocation.watchPosition(
+                onLocationSuccess,
+                onLocationError,
+                options
+            );
+
+            // البوصلة
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                window.addEventListener('deviceorientation', handleOrientation, true);
+                orientationSupported = true;
+            }
+        }
+
+        // عند نجاح GPS
+        function onLocationSuccess(position) {
+            myLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy
+            };
+
+            document.getElementById('gpsStatus').innerHTML = 
+                `<span style="color: var(--success);">✅</span><span>GPS نشط (دقة: ${Math.round(myLocation.accuracy)} م)</span>`;
+
+            // تحديث الموقع في Firebase
+            // updateMyLocationInFirebase(myLocation);
+
+            // حساب المسافة والاتجاه (إذا كان موقع الشريك موجود)
+            if (partnerLocation) {
+                updateNavigation();
+            }
+        }
+
+        function onLocationError(error) {
+            console.error('GPS Error:', error);
+            document.getElementById('gpsStatus').innerHTML = 
+                '<span style="color: var(--danger);">❌</span><span>خطأ في GPS - تأكد من الصلاحيات</span>';
+        }
+
+        // معالجة البوصلة
+        function handleOrientation(event) {
+            let heading = event.alpha || event.webkitCompassHeading || 0;
+            
+            // تصحيح للـ iOS
+            if (event.webkitCompassHeading) {
+                heading = event.webkitCompassHeading;
+            } else if (event.alpha) {
+                heading = 360 - event.alpha;
+            }
+
+            userHeading = heading;
+            
+            if (partnerLocation && myLocation) {
+                updateNavigation();
+            }
+        }
+
+        // تحديث الملاحة
+        function updateNavigation() {
+            if (!myLocation || !partnerLocation) return;
+
+            // حساب المسافة
+            const distance = calculateDistance(
+                myLocation.lat,
+                myLocation.lng,
+                partnerLocation.lat,
+                partnerLocation.lng
+            );
+
+            // حساب الاتجاه
+            const bearing = calculateBearing(
+                myLocation.lat,
+                myLocation.lng,
+                partnerLocation.lat,
+                partnerLocation.lng
+            );
+
+            // تحديث العرض
+            document.getElementById('distance').textContent = Math.round(distance);
+            document.getElementById('bearing').textContent = Math.round(bearing);
+
+            // تدوير السهم
+            const rotation = bearing - userHeading;
+            document.getElementById('arrow').style.transform = 
+                `translate(-50%, -50%) rotate(${rotation}deg)`;
+
+            // تحديث الاتجاه
+            updateDirection(rotation);
+        }
+
+        // حساب المسافة (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // نصف قطر الأرض بالمتر
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // حساب الاتجاه
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+            const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                    Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+            
+            let bearing = Math.atan2(y, x) * 180 / Math.PI;
+            return (bearing + 360) % 360;
+        }
+
+        // تحديث مؤشر الاتجاه
+        function updateDirection(rotation) {
+            let normalizedRotation = rotation;
+            while (normalizedRotation > 180) normalizedRotation -= 360;
+            while (normalizedRotation < -180) normalizedRotation += 360;
+
+            const iconEl = document.getElementById('directionIcon');
+            const textEl = document.getElementById('directionText');
+
+            if (Math.abs(normalizedRotation) < 20) {
+                iconEl.textContent = '⬆️';
+                textEl.textContent = 'مستقيم';
+                textEl.style.color = 'var(--success)';
+            } else if (normalizedRotation > 0) {
+                iconEl.textContent = '➡️';
+                textEl.textContent = 'يمين';
+                textEl.style.color = 'var(--warning)';
+            } else {
+                iconEl.textContent = '⬅️';
+                textEl.textContent = 'يسار';
+                textEl.style.color = 'var(--warning)';
+            }
+        }
+
+        // إرسال إشارة اتصال
+        function sendCallSignal() {
+            if (firebaseReady && sessionCode) {
+                dbRef(`sessions/${sessionCode}/calls`), {
+                    from: 'companion',
+                    ts: Date.now()
+                });
+                // اهتزاز للمرسِل
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                showToast('📞 تم إرسال النداء!');
+            } else {
+                alert('⚠️ Firebase غير متصل، تأكد من الاتصال بالإنترنت');
+            }
+        }
+
+        // صوت النجاح
+        function playSuccessSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        // الخروج
+        function exitApp() {
+            if (confirm('هل تريد إنهاء الجلسة؟')) {
+                if (watchId) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
+                if (html5QrCode) {
+                    html5QrCode.stop().catch(err => console.log(err));
+                }
+                location.reload();
+            }
+        }
+
+        // المنزلقات (للتجربة)
+        document.getElementById('bearingSlider').addEventListener('input', function() {
+            const bearing = parseInt(this.value);
+            document.getElementById('bearingValue').textContent = bearing + '°';
+            document.getElementById('bearing').textContent = bearing;
+            
+            // محاكاة موقع الشريك
+            if (!partnerLocation && myLocation) {
+                const distance = 250; // مسافة افتراضية
+                partnerLocation = calculateDestination(myLocation.lat, myLocation.lng, bearing, distance);
+                document.getElementById('distance').textContent = distance;
+            }
+            
+            const rotation = bearing - userHeading;
+            document.getElementById('arrow').style.transform = 
+                `translate(-50%, -50%) rotate(${rotation}deg)`;
+            updateDirection(rotation);
+        });
+
+        document.getElementById('distanceSlider').addEventListener('input', function() {
+            const dist = parseInt(this.value);
+            document.getElementById('distanceValue').textContent = dist + ' م';
+            document.getElementById('distance').textContent = dist;
+        });
+
+        // حساب وجهة بناءً على اتجاه ومسافة
+        function calculateDestination(lat, lon, bearing, distance) {
+            const R = 6371000;
+            const δ = distance / R;
+            const θ = bearing * Math.PI / 180;
+            
+            const φ1 = lat * Math.PI / 180;
+            const λ1 = lon * Math.PI / 180;
+            
+            const φ2 = Math.asin(Math.sin(φ1) * Math.cos(δ) +
+                                Math.cos(φ1) * Math.sin(δ) * Math.cos(θ));
+            
+            const λ2 = λ1 + Math.atan2(Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+                                      Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2));
+            
+            return {
+                lat: φ2 * 180 / Math.PI,
+                lng: λ2 * 180 / Math.PI
+            };
+        }
+
+        // ====== وظائف Firebase ======
+
+        // ====== وظائف Firebase (compat) ======
+
+        // بدء الاستماع لـ Firebase
+        function startFirebaseListener() {
+            const db = window._db;
+            if (!db || !sessionCode) {
+                setTimeout(startFirebaseListener, 300);
+                return;
+            }
+            firebaseReady = true;
+            const el = document.getElementById('firebaseStatus');
+            if (el) { el.textContent = '🔥 Firebase متصل'; el.style.color = '#10b981'; }
+
+            console.log('🔥 Firebase للجلسة:', sessionCode);
+
+            // الاستماع لموقع الشريك
+            db.ref(`sessions/${sessionCode}/locations`).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+                if (selectedRole === 'deaf' && data.companion) {
+                    partnerLocation = { lat: data.companion.lat, lng: data.companion.lng };
+                    if (myLocation) updateNavigation();
+                } else if (selectedRole === 'companion' && data.deaf) {
+                    partnerLocation = { lat: data.deaf.lat, lng: data.deaf.lng };
+                    if (myLocation) updateNavigation();
+                }
+            });
+
+            // الاستماع للمكالمات (للحاج الأصم فقط)
+            if (selectedRole === 'deaf') {
+                db.ref(`sessions/${sessionCode}/calls`).on('child_added', (snapshot) => {
+                    if (navigator.vibrate) {
+                        navigator.vibrate([500, 150, 500, 150, 500, 150, 500]);
+                    }
+                    showCallAlert();
+                    snapshot.ref.remove();
+                });
+            }
+        }
+
+        // رفع موقعي لـ Firebase
+        function updateMyLocationInFirebase(location) {
+            const db = window._db;
+            if (!db || !sessionCode || !selectedRole) return;
+            const role = selectedRole === 'deaf' ? 'deaf' : 'companion';
+            db.ref(`sessions/${sessionCode}/locations/${role}`).set({
+                lat: location.lat,
+                lng: location.lng,
+                accuracy: location.accuracy || 0,
+                ts: Date.now()
+            });
+        }
+
+        // إرسال نداء عبر Firebase
+        function sendCallToFirebase() {
+            const db = window._db;
+            if (!db || !sessionCode) return;
+            db.ref(`sessions/${sessionCode}/calls`).push({
+                from: 'companion',
+                ts: Date.now()
+            });
+        }
+
+        // تنبيه المكالمة المرئي
+        function showCallAlert() {
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed; top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                color: white; padding: 50px 60px; border-radius: 25px;
+                font-size: 2.5em; font-weight: 900; text-align: center;
+                z-index: 9999; box-shadow: 0 20px 60px rgba(245,87,108,0.7);
+                font-family: Cairo, sans-serif; direction: rtl;
+                animation: callShake 0.4s ease-in-out 4;
+            `;
+            alertDiv.innerHTML = '📞<br><span style="font-size:0.7em">رفيقك يناديك!</span>';
+            document.body.appendChild(alertDiv);
+
+            const style = document.createElement('style');
+            style.textContent = `@keyframes callShake {
+                0%,100%{transform:translate(-50%,-50%) rotate(0deg)}
+                25%{transform:translate(-50%,-50%) rotate(-5deg)}
+                75%{transform:translate(-50%,-50%) rotate(5deg)}
+            }`;
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 4000);
+        }
+
+        // Toast بسيط
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = `
+                position: fixed; bottom: 30px; left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.85); color: white;
+                padding: 15px 30px; border-radius: 25px;
+                font-size: 1.1em; font-weight: 700;
+                z-index: 9998; font-family: Cairo, sans-serif;
+            `;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
+        }
+
+        // تحديث الموقع عند تغييره
+        function onLocationSuccess(position) {
+            myLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy
+            };
+            document.getElementById('gpsStatus').innerHTML =
+                `<span style="color:var(--success)">✅</span><span>GPS نشط (دقة: ${Math.round(myLocation.accuracy)} م)</span>`;
+
+            updateMyLocationInFirebase(myLocation);
+
+            if (partnerLocation) updateNavigation();
+        }
+
+        // زر الاتصال
+        function sendCallSignal() {
+            sendCallToFirebase();
+            if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+            showToast('📞 تم إرسال النداء!');
+            const btn = document.getElementById('callBtn');
+            btn.textContent = '✅ تم الإرسال!';
+            setTimeout(() => { btn.textContent = '📞 اتصل بالحاج الأصم'; }, 3000);
+        }
+
+        // ====== نهاية وظائف Firebase ======
+
+        // تحميل آخر جلسة (اختياري)
+        window.addEventListener('load', function() {
+            const lastSession = localStorage.getItem('lastSession');
+            const lastRole = localStorage.getItem('lastRole');
+            
+            if (lastSession && confirm('هل تريد متابعة الجلسة السابقة؟\n' + lastSession)) {
+                sessionCode = lastSession;
+                selectedRole = lastRole;
+                
+                if (lastRole === 'deaf') {
+                    setupDeafMode();
+                    setTimeout(() => startDeafMode(), 1000);
+                } else {
+                    document.getElementById('codeInput').value = lastSession;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
